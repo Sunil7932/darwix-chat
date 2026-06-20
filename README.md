@@ -37,6 +37,7 @@ built-in offline bot takes over so the app still works without any setup.
   - [How does auto-scroll work?](#how-does-auto-scroll-work)
   - [How is chat history saved?](#how-is-chat-history-saved)
   - [What happens when something goes wrong?](#what-happens-when-something-goes-wrong)
+  - [Complete data flow](#complete-data-flow-browser--server--ai--back)
 - [Project Structure](#project-structure)
 - [How the pieces connect](#how-the-pieces-connect)
 - [Security](#security)
@@ -169,152 +170,163 @@ Here's every assignment requirement mapped to what was built and where the code 
 
 ## How It Works (Flow Diagrams)
 
+> GitHub renders these Mermaid diagrams as interactive visuals automatically.
+
 ### What happens when you send a message?
 
-```
-  You type a message and press Enter
-                 │
-                 ▼
-       ┌─────────────────┐
-       │   ChatInput.tsx  │  Validates: not empty, under 4000 chars
-       └────────┬────────┘
-                │
-                ▼
-       ┌─────────────────┐
-       │   useChat.ts     │  Creates message with status = "sending"
-       │                  │  Shows it immediately (optimistic update)
-       └────────┬────────┘
-                │
-                ▼
-       ┌─────────────────┐
-       │  Sends to server │  POST /api/chat with conversation history
-       └────────┬────────┘
-                │
-       ┌────────┼────────────┐
-       │        │            │
-       ▼        ▼            ▼
-   ┌────────┐ ┌──────────┐ ┌──────────┐
-   │ Server │ │ No API   │ │ Network  │
-   │ works! │ │ key set  │ │ error    │
-   └───┬────┘ └────┬─────┘ └────┬─────┘
-       │           │            │
-       ▼           ▼            ▼
-   ┌────────┐ ┌──────────┐ ┌──────────────┐
-   │ Stream │ │ Use the  │ │ Show "Not    │
-   │ reply  │ │ offline  │ │ delivered"   │
-   │ word   │ │ fallback │ │ + Retry      │
-   │ by word│ │ bot      │ │ button       │
-   └───┬────┘ └────┬─────┘ └──────────────┘
-       │           │
-       ▼           ▼
-   ┌──────────────────┐
-   │ Bot reply shown  │
-   │ Chat saved to    │
-   │ localStorage     │
-   └──────────────────┘
+```mermaid
+flowchart TD
+    A([You type a message & press Enter]) --> B[ChatInput validates input]
+    B --> C[useChat creates message\nwith status = sending]
+    C --> D[Message appears instantly\nin the chat - optimistic update]
+    D --> E[POST /api/chat\nsent to server]
+
+    E --> F{What does the\nserver respond?}
+
+    F -->|200 OK| G[Stream AI reply\nword by word]
+    F -->|404 / 503\nNo API key| H[Use offline\nfallback bot]
+    F -->|Network error\nor 5xx| I[Mark message as\nfailed]
+
+    G --> J[Bot reply appears\nin chat]
+    H --> J
+
+    J --> K[(Save to localStorage)]
+
+    I --> L[Show Not delivered\n+ Retry button]
+    L -->|User clicks Retry| E
+
+    style A fill:#4f46e5,color:#fff,stroke:none
+    style D fill:#dbeafe,color:#1e3a5f,stroke:#93c5fd
+    style G fill:#d1fae5,color:#065f46,stroke:#6ee7b7
+    style H fill:#fef3c7,color:#92400e,stroke:#fcd34d
+    style I fill:#fee2e2,color:#991b1b,stroke:#fca5a5
+    style L fill:#fee2e2,color:#991b1b,stroke:#fca5a5
+    style K fill:#f3f4f6,color:#374151,stroke:#d1d5db
 ```
 
-**In simple terms:** Your message shows up instantly (even before the server responds). If the server is available, the AI reply streams in word by word. If there's no API key, a built-in bot responds instead. If something goes wrong, you see a "Retry" button.
+**How it works:** When you press Enter, your message shows up right away (even before the server responds — this is called an "optimistic update"). Then the app sends it to the server. If the server is available, the AI reply streams in word by word. If there's no API key, a built-in bot responds instead. If something goes wrong, you see a "Retry" button to try again.
+
+---
 
 ### How does auto-scroll work?
 
-```
-        A new message arrives
-                │
-                ▼
-     ┌────────────────────┐
-     │  Are you at the    │
-     │  bottom of the     │
-     │  chat?             │
-     └──────┬───────┬─────┘
-            │       │
-         YES│       │NO (you scrolled up to read)
-            │       │
-            ▼       ▼
-     ┌──────────┐  ┌─────────────────────┐
-     │ Scroll   │  │ Don't scroll.       │
-     │ down to  │  │ Show a "Jump to     │
-     │ show the │  │ latest" button      │
-     │ new msg  │  │ with unread count   │
-     └──────────┘  └─────────────────────┘
+```mermaid
+flowchart TD
+    A([New message arrives]) --> B{Are you at the\nbottom of the chat?}
+
+    B -->|Yes| C[Smooth scroll down\nto show new message]
+    B -->|No - you scrolled\nup to read history| D[Don't scroll]
+
+    D --> E[Show Jump to latest\nbutton with unread count]
+    E -->|User clicks button| C
+
+    F([You send a message]) --> G[Always scroll to bottom\nso you see your own message]
+
+    style A fill:#4f46e5,color:#fff,stroke:none
+    style F fill:#4f46e5,color:#fff,stroke:none
+    style C fill:#d1fae5,color:#065f46,stroke:#6ee7b7
+    style D fill:#fef3c7,color:#92400e,stroke:#fcd34d
+    style E fill:#dbeafe,color:#1e3a5f,stroke:#93c5fd
+    style G fill:#d1fae5,color:#065f46,stroke:#6ee7b7
 ```
 
-**In simple terms:** If you're at the bottom, new messages scroll into view automatically. But if you've scrolled up to read older messages, it won't interrupt you — instead, a button appears showing how many new messages arrived.
+**How it works:** If you're at the bottom, new messages scroll into view automatically. But if you've scrolled up to read older messages, it won't interrupt you — instead, a "Jump to latest" button appears showing how many new messages arrived. One exception: when *you* send a message, it always scrolls to the bottom so you can see what you just sent.
 
-**One exception:** When *you* send a message, it always scrolls to the bottom so you can see your own message.
+---
 
 ### How is chat history saved?
 
-```
-        App opens in the browser
-                │
-                ▼
-     ┌────────────────────┐
-     │  Check localStorage │
-     │  for saved chat     │
-     └──────┬───────┬──────┘
-            │       │
-       Found│       │Empty or corrupted
-            │       │
-            ▼       ▼
-     ┌──────────┐  ┌─────────────────┐
-     │ Restore  │  │ Start fresh     │
-     │ previous │  │ with welcome    │
-     │ messages │  │ message         │
-     └──────────┘  └─────────────────┘
+```mermaid
+flowchart TD
+    A([App opens in browser]) --> B[Check localStorage\nfor saved chat]
 
-        While you're chatting:
-     ┌─────────────────────────┐
-     │  Every time messages    │
-     │  change, wait 400ms     │
-     │  then save to           │
-     │  localStorage           │
-     │                         │
-     │  Max 5,000 messages     │
-     │  stored                 │
-     └─────────────────────────┘
+    B --> C{Found valid\nsaved data?}
+
+    C -->|Yes| D[Restore previous messages]
+    C -->|No data or\ncorrupted| E[Start fresh with\nwelcome message]
+
+    D --> F[Any messages stuck\nin sending state?]
+    F -->|Yes| G[Mark them as failed\nso user can Retry]
+    F -->|No| H[Chat ready]
+    G --> H
+    E --> H
+
+    H --> I([User sends / receives messages])
+    I --> J[Wait 400ms after\nlast change - debounce]
+    J --> K[(Save to localStorage\nmax 5,000 messages)]
+    K --> I
+
+    style A fill:#4f46e5,color:#fff,stroke:none
+    style I fill:#4f46e5,color:#fff,stroke:none
+    style D fill:#d1fae5,color:#065f46,stroke:#6ee7b7
+    style E fill:#fef3c7,color:#92400e,stroke:#fcd34d
+    style G fill:#fee2e2,color:#991b1b,stroke:#fca5a5
+    style K fill:#f3f4f6,color:#374151,stroke:#d1d5db
 ```
 
-**In simple terms:** When the app loads, it checks localStorage for a previous chat. If found and valid, it restores your messages. As you chat, it auto-saves every 400ms (not on every keystroke to avoid performance issues). It caps storage at 5,000 messages so it doesn't fill up the browser.
+**How it works:** When the app loads, it checks localStorage for a previous chat. If found and valid, it restores your messages. If any messages were stuck in "sending" (because you closed the tab mid-send), they get marked as "failed" so you can retry. While you chat, it auto-saves every 400ms (not on every keystroke for performance). Storage is capped at 5,000 messages so it doesn't fill up the browser.
+
+---
 
 ### What happens when something goes wrong?
 
-```
-     Message fails to send
-     (network down, server error, etc.)
-                │
-                ▼
-     ┌─────────────────────────┐
-     │ Mark the message as     │
-     │ "failed"                │
-     │                         │
-     │ Stop the typing         │
-     │ indicator               │
-     └───────────┬─────────────┘
-                 │
-                 ▼
-     ┌─────────────────────────┐
-     │ Show to the user:       │
-     │                         │
-     │  "Not delivered"        │
-     │  [Retry] button         │
-     │                         │
-     │ Screen reader says:     │
-     │  "A message failed to   │
-     │   send. Use retry to    │
-     │   try again."           │
-     └───────────┬─────────────┘
-                 │
-           User clicks Retry
-                 │
-                 ▼
-     ┌─────────────────────────┐
-     │ Try sending the same    │
-     │ message again           │
-     └─────────────────────────┘
+```mermaid
+flowchart TD
+    A([Message delivery fails]) --> B{Was the bot\nalready typing\na partial reply?}
+
+    B -->|Yes| C[Remove the\npartial reply]
+    B -->|No| D[Continue]
+
+    C --> D
+    D --> E[Mark message as failed]
+    E --> F[Stop typing indicator]
+
+    F --> G[Show to user:\nNot delivered + Retry button]
+    F --> H[Screen reader announces:\nA message failed to send]
+
+    G -->|User clicks Retry| I[Send the same\nmessage again]
+    I --> J{Success?}
+    J -->|Yes| K[Stream AI reply\nnormally]
+    J -->|No| G
+
+    style A fill:#fee2e2,color:#991b1b,stroke:none
+    style E fill:#fee2e2,color:#991b1b,stroke:#fca5a5
+    style G fill:#fef3c7,color:#92400e,stroke:#fcd34d
+    style H fill:#dbeafe,color:#1e3a5f,stroke:#93c5fd
+    style K fill:#d1fae5,color:#065f46,stroke:#6ee7b7
 ```
 
-**In simple terms:** If a message fails, it doesn't just disappear. The message stays on screen with a clear "Not delivered" label and a Retry button. Screen readers also announce the failure. Clicking Retry sends the same message again.
+**How it works:** If a message fails, it doesn't just disappear. The message stays on screen with a clear "Not delivered" label and a Retry button. Screen readers also announce the failure for accessibility. Clicking Retry sends the same message again — if it fails again, you can keep retrying.
+
+---
+
+### Complete data flow (Browser → Server → AI → Back)
+
+```mermaid
+flowchart LR
+    subgraph Browser
+        A[React Components] -->|user actions| B[React Hooks]
+        B -->|state updates| A
+        B -->|read/write| C[(localStorage)]
+    end
+
+    subgraph Server
+        D[/api/chat\nproxy/]
+        D -->|adds API key| E[Google Gemini AI]
+        E -->|streamed response| D
+    end
+
+    B -->|POST /api/chat| D
+    D -->|stream tokens| B
+
+    style A fill:#dbeafe,color:#1e3a5f,stroke:#93c5fd
+    style B fill:#e0e7ff,color:#3730a3,stroke:#a5b4fc
+    style C fill:#f3f4f6,color:#374151,stroke:#d1d5db
+    style D fill:#fef3c7,color:#92400e,stroke:#fcd34d
+    style E fill:#d1fae5,color:#065f46,stroke:#6ee7b7
+```
+
+**How it works:** The browser never talks to Google Gemini directly. Instead, it sends your message to our own `/api/chat` server endpoint. The server adds the secret API key and forwards the request to Gemini. The AI reply streams back through the server to your browser — word by word. This keeps the API key safe and never exposed to the browser.
 
 ---
 
@@ -367,16 +379,37 @@ src/
 
 The app is split into three layers, each with a clear job:
 
-```
-┌─────────────────┐    ┌──────────────────┐    ┌──────────────────┐
-│   Components    │ ←──│     Hooks        │ ←──│    Lib (helpers) │
-│   (What you see)│    │ (Business logic) │    │  (Data & I/O)    │
-└─────────────────┘    └──────────────────┘    └──────────────────┘
+```mermaid
+flowchart LR
+    subgraph Components ["Components (What you see)"]
+        direction TB
+        C1[ChatInput.tsx]
+        C2[ChatHeader.tsx]
+        C3[MessageBubble.tsx]
+        C4[MessageList.tsx]
+    end
 
- ChatInput.tsx          useChat.ts              chatClient.ts
- ChatHeader.tsx         useStickToBottom.ts     storage.ts
- MessageBubble.tsx                              botSimulator.ts
- MessageList.tsx                                id.ts, time.ts
+    subgraph Hooks ["Hooks (Business logic)"]
+        direction TB
+        H1[useChat.ts]
+        H2[useStickToBottom.ts]
+    end
+
+    subgraph Lib ["Lib (Helpers & I/O)"]
+        direction TB
+        L1[chatClient.ts]
+        L2[storage.ts]
+        L3[botSimulator.ts]
+        L4[id.ts / time.ts]
+    end
+
+    Components -->|user actions:\nsend, retry, scroll| Hooks
+    Hooks -->|state updates:\nmessages, typing| Components
+    Hooks -->|read/write data| Lib
+
+    style Components fill:#dbeafe,color:#1e3a5f,stroke:#93c5fd
+    style Hooks fill:#e0e7ff,color:#3730a3,stroke:#a5b4fc
+    style Lib fill:#f3f4f6,color:#374151,stroke:#d1d5db
 ```
 
 - **Components** render the UI and handle user interactions (click, type, scroll)
