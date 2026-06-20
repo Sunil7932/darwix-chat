@@ -8,6 +8,8 @@ interface StickToBottomOptions {
   lastMessageRole: MessageRole | null;
   /** Whether the bot typing row is currently visible. */
   isBotTyping: boolean;
+  /** Length of the last message's content — used to follow streaming replies. */
+  lastMessageLength: number;
   /** Imperatively scrolls the viewport to the very bottom. */
   scrollToEnd: (behavior: ScrollBehavior) => void;
 }
@@ -36,7 +38,7 @@ const PIN_THRESHOLD_PX = 120;
  */
 export function useStickToBottom(
   scrollRef: RefObject<HTMLElement | null>,
-  { messageCount, lastMessageRole, isBotTyping, scrollToEnd }: StickToBottomOptions,
+  { messageCount, lastMessageRole, isBotTyping, lastMessageLength, scrollToEnd }: StickToBottomOptions,
 ): StickToBottomState {
   const [isPinned, setIsPinned] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -88,6 +90,13 @@ export function useStickToBottom(
   useLayoutEffect(() => {
     if (isBotTyping && isPinnedRef.current) jumpToBottom('smooth');
   }, [isBotTyping, jumpToBottom]);
+
+  // Follow the streaming reply as it grows word by word.
+  useLayoutEffect(() => {
+    if (lastMessageLength > 0 && isPinnedRef.current) {
+      scrollToEnd('auto');
+    }
+  }, [lastMessageLength, scrollToEnd]);
 
   return { isPinned, unreadCount, handleScroll, jumpToBottom };
 }

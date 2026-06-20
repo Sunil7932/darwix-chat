@@ -54,6 +54,7 @@ export function MessageList({ messages, isBotTyping, onRetry }: MessageListProps
     {
       messageCount: messages.length,
       lastMessageRole: lastMessage?.role ?? null,
+      lastMessageLength: lastMessage?.content.length ?? 0,
       isBotTyping,
       scrollToEnd,
     },
