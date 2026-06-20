@@ -23,6 +23,7 @@ built-in offline bot takes over so the app still works without any setup.
 
 ## Table of Contents
 
+- [Screenshots](#screenshots)
 - [Quick Start](#quick-start)
   - [Enable Real AI Replies](#enable-real-ai-replies-optional-free)
   - [Available Scripts](#available-scripts)
@@ -42,13 +43,32 @@ built-in offline bot takes over so the app still works without any setup.
   - [Complete data flow](#complete-data-flow-browser--server--ai--back)
 - [Project Structure](#project-structure)
 - [How the pieces connect](#how-the-pieces-connect)
+- [Assumptions](#assumptions)
 - [Security](#security)
 - [Deployment](#deployment)
 - [Browser Support](#browser-support)
 
 ---
 
+## Screenshots
+
+| Conversation (desktop) | Error & retry handling |
+|---|---|
+| ![Desktop conversation](docs/screenshots/01-desktop-conversation.png) | ![Error and retry state](docs/screenshots/03-desktop-error-retry.png) |
+| User messages (right, indigo, with delivery ✓) and bot replies (left, with avatar) — each with a timestamp. | A failed send stays on screen as **Not delivered** with a **Retry** button instead of disappearing. |
+
+| Responsive (narrow viewport) |
+|---|
+| ![Narrow viewport](docs/screenshots/02-mobile-conversation.png) |
+| The layout collapses to a single column and message bubbles reflow cleanly on small screens. |
+
+> **Live demo:** [https://darwix-chat-ebon.vercel.app](https://darwix-chat-ebon.vercel.app) — the best way to experience streaming replies, auto-scroll, and accessibility.
+
+---
+
 ## Quick Start
+
+**Requires Node.js 18 or newer.**
 
 ```bash
 npm install
@@ -71,6 +91,16 @@ npm run dev
 ```
 
 The key is only used on the server — it never gets sent to the browser.
+
+#### Environment Variables
+
+| Variable | Required | Default | What it does |
+|---|---|---|---|
+| `GEMINI_API_KEY` | No* | — | Your Google Gemini key. Without it, the app falls back to the offline bot. |
+| `GOOGLE_API_KEY` | No | — | Accepted as an alternative name for the key (used if `GEMINI_API_KEY` is unset). |
+| `GEMINI_MODEL` | No | `gemini-2.5-flash` | Which Gemini model to use (e.g. `gemini-2.0-flash`, `gemini-flash-latest`). |
+
+\* Not required to run, but required for real AI replies. All three are server-side only and never exposed to the browser.
 
 ### Available Scripts
 
@@ -150,6 +180,7 @@ Here's every assignment requirement mapped to what was built and where the code 
 | What was asked | What was built | Where |
 |---|---|---|
 | Real AI responses | Google Gemini answers your questions through a server proxy | `chatHandler.ts`, `chatClient.ts` |
+| Friendly rate-limit handling | If Gemini's free-tier quota is hit (HTTP 429), the user sees "Rate limit reached — please wait a moment and try again" instead of a crash | `chatHandler.ts`, `chatClient.ts` |
 | Works without API key | Offline bot gives canned replies when Gemini isn't set up | `botSimulator.ts` |
 | Save chat history | Messages saved to localStorage (auto-saves 400ms after each change) | `storage.ts` |
 | Restore on reload | Previous messages load back on page refresh; validates data integrity | `storage.ts` |
@@ -363,6 +394,8 @@ src/
 │
 └── components/
     ├── ErrorBoundary.tsx   # Catches crashes, shows recovery UI
+    ├── ui/
+    │   └── Tooltip.tsx     # Accessible hover/focus tooltip (full date on timestamps)
     └── chat/
         ├── ChatHeader.tsx      # Top bar with status and menu
         ├── MessageList.tsx     # Virtualised message list
@@ -419,6 +452,19 @@ flowchart LR
 - **Lib** does the actual work (call the API, read/write storage, generate IDs)
 
 This separation means the UI never talks to localStorage directly, and the API logic doesn't know anything about React. Easy to test, easy to change.
+
+---
+
+## Assumptions
+
+A few deliberate scoping decisions were made while building this:
+
+- **No real backend or auth.** "Session persistence" is simulated entirely client-side with `localStorage` — chat history is per-browser, not synced to a server or tied to a user account. This matches the brief's focus on the chat interface itself.
+- **AI replies are optional.** Bot responses come from Google Gemini through a server-side proxy (`/api/chat`). If no API key is configured — or if the free-tier quota is exhausted — a built-in **offline bot** answers instead, so the app is always functional with zero setup.
+- **Single conversation.** The app is scoped to one ongoing chat thread (no multi-room, multi-user, or message editing/deletion), keeping the focus on the required interface and behaviors.
+- **"Delivery failure" is real network failure.** Errors, retries, and the "Not delivered" state are driven by actual fetch/network/HTTP outcomes (including Gemini 429 rate limits), not artificially simulated.
+- **Modern browsers only.** The app relies on streaming fetch, `AbortController`, and dynamic viewport units — supported in all current Chrome, Edge, Firefox, and Safari versions. No IE11.
+- **Free-tier friendly by default.** The default model is `gemini-2.5-flash`; it can be changed via the `GEMINI_MODEL` env var without code changes.
 
 ---
 

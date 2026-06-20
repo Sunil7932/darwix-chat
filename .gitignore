@@ -40,3 +40,4 @@ coverage
 
 # Assessment brief (not part of the solution)
 *.pdf
+.vercel
