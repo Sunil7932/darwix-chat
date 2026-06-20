@@ -42,7 +42,7 @@ export default function App() {
         Skip to message input
       </a>
 
-      <div className="mx-auto flex h-[100dvh] w-full max-w-4xl flex-col bg-canvas shadow-2xl">
+      <div className="flex h-[100dvh] w-full flex-col bg-canvas">
         <ChatHeader
           isBotTyping={isBotTyping}
           messageCount={realMessageCount}
