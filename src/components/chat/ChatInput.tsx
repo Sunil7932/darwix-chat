@@ -69,7 +69,7 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
 
   return (
     <form
-      className="border-t border-border-subtle bg-surface/80 px-4 py-3 backdrop-blur-sm sm:px-6"
+      className="bg-surface/80 px-4 py-3 backdrop-blur-sm sm:px-6"
       onSubmit={(event) => {
         event.preventDefault();
         submit();
