@@ -13,7 +13,7 @@ const WELCOME_MESSAGE: Message = {
   id: 'welcome',
   role: 'bot',
   content:
-    "Hi! I’m the Darwix assistant, powered by Claude. Ask me anything — your message streams to the model and the reply comes back token by token. Try a multi-line message with Shift + Enter, or load a large demo conversation from the menu to watch virtualisation at work.",
+    "Hi! I’m the Darwix assistant, powered by Google Gemini. Ask me anything — your message streams to the model and the reply comes back token by token. Try a multi-line message with Shift + Enter, or load a large demo conversation from the menu to watch virtualisation at work.",
   createdAt: Date.now(),
   status: 'sent',
 };
@@ -34,7 +34,7 @@ export interface UseChatResult {
  *
  * Owns the message list, the typing indicator, persistence, and the full
  * optimistic send → stream reply → (retry on failure) lifecycle. The reply is
- * streamed from the server-side Claude proxy; if the server has no API key it
+ * streamed from the server-side Gemini proxy; if the server has no API key it
  * transparently falls back to an offline canned reply so the app still runs.
  *
  * All asynchronous work is tied to an `AbortController` so a reset (clear / load

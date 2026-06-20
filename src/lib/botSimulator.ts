@@ -1,14 +1,14 @@
 /**
  * Offline fallback bot.
  *
- * Used only when the server has no Anthropic API key configured (so the app
- * still runs end-to-end out of the box). When a key *is* present, real Claude
+ * Used only when the server has no Gemini API key configured (so the app
+ * still runs end-to-end out of the box). When a key *is* present, real model
  * responses stream in via `@/lib/chatClient` instead and this module is unused.
  */
 
 const FALLBACK_REPLIES: readonly string[] = [
-  "I’m running in offline demo mode right now (no API key configured), so I can’t give a real answer — but the chat UI, streaming, retry and persistence all work. Add an ANTHROPIC_API_KEY to get live responses.",
-  'Offline demo mode: connect a Claude API key on the server to get real answers. Everything else — typing indicator, auto-scroll, history — is fully functional.',
+  "I’m running in offline demo mode right now (no API key configured), so I can’t give a real answer — but the chat UI, streaming, retry and persistence all work. Add a GEMINI_API_KEY to get live responses.",
+  'Offline demo mode: connect a Google Gemini API key on the server to get real answers. Everything else — typing indicator, auto-scroll, history — is fully functional.',
   'This is a simulated reply (no API key set). With a key configured, I’d answer your question for real and stream the response token by token.',
 ];
 

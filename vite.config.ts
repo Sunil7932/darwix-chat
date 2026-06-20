@@ -7,7 +7,7 @@ import { handleChat } from './server/chatHandler';
 /**
  * Dev-only plugin that mounts the chat proxy at `/api/chat`, mirroring the
  * production serverless function (`api/chat.ts`). This lets `npm run dev`
- * serve real Claude responses without a separate backend process.
+ * serve real model responses without a separate backend process.
  */
 function chatApiPlugin(): PluginOption {
   return {
@@ -26,8 +26,9 @@ export default defineConfig(({ mode }) => {
   // secret to the dev middleware via `process.env`. It is never bundled into
   // client code — only the proxy handler reads it.
   const env = loadEnv(mode, process.cwd(), '');
-  if (env.ANTHROPIC_API_KEY) process.env.ANTHROPIC_API_KEY = env.ANTHROPIC_API_KEY;
-  if (env.ANTHROPIC_MODEL) process.env.ANTHROPIC_MODEL = env.ANTHROPIC_MODEL;
+  if (env.GEMINI_API_KEY) process.env.GEMINI_API_KEY = env.GEMINI_API_KEY;
+  if (env.GOOGLE_API_KEY) process.env.GOOGLE_API_KEY = env.GOOGLE_API_KEY;
+  if (env.GEMINI_MODEL) process.env.GEMINI_MODEL = env.GEMINI_MODEL;
 
   return {
     plugins: [react(), tailwindcss(), chatApiPlugin()],
