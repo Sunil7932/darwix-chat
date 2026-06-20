@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { handleChat } from '../server/chatHandler';
+import { handleChat } from '../server/chatHandler.js';
 
 /**
  * Serverless entry point for production deployments (e.g. Vercel).

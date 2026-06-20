@@ -1,5 +1,7 @@
 # Darwix AI — Chat Interface
 
+**Live Demo:** [https://darwix-chat-ebon.vercel.app](https://darwix-chat-ebon.vercel.app)
+
 A clean, fast, and fully accessible chat app built as a take-home assignment for
 the **Darwix AI Frontend Developer Intern** role.
 
