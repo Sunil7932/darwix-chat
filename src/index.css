@@ -1,0 +1,141 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens (Tailwind v4 CSS-first config).
+ * Exposing these via @theme generates matching utilities (e.g. `bg-surface`,
+ * `text-accent`) and keeps the palette centralised and themeable.
+ */
+@theme {
+  --color-canvas: #0b0f17;
+  --color-surface: #111726;
+  --color-surface-raised: #1a2236;
+  --color-border-subtle: #1f2a40;
+
+  --color-accent: #6366f1;
+  --color-accent-strong: #4f46e5;
+  --color-accent-soft: #312e81;
+
+  --color-bot-bubble: #1a2236;
+  --color-user-bubble: #4f46e5;
+
+  --color-text-primary: #e7ecf3;
+  --color-text-secondary: #9aa7bd;
+  --color-text-muted: #64748b;
+
+  --color-danger: #f43f5e;
+  --color-danger-soft: #4c1d28;
+  --color-success: #22c55e;
+
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+
+  --radius-bubble: 1.1rem;
+
+  --animate-fade-in-up: fade-in-up 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-typing-bounce: typing-bounce 1.2s infinite ease-in-out;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes typing-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+/* Base layer ---------------------------------------------------------------- */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-canvas);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Visible, consistent focus ring for keyboard users across the app. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Respect users who prefer reduced motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Utilities ----------------------------------------------------------------- */
+@layer utilities {
+  /* Screen-reader-only content (visually hidden, still announced). */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Thin, theme-aware scrollbar for the chat viewport. */
+  .scrollbar-slim {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-subtle) transparent;
+  }
+  .scrollbar-slim::-webkit-scrollbar {
+    width: 10px;
+  }
+  .scrollbar-slim::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-slim::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-subtle);
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  .scrollbar-slim::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-text-muted);
+  }
+}
