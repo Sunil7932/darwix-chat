@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Database, MoreVertical, Sparkles, Trash2 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -11,8 +11,9 @@ interface ChatHeaderProps {
 
 /**
  * App header: branding, a live presence/status line, and an accessible actions
- * menu (clear conversation / load a large demo). The menu supports keyboard
- * dismissal (Escape) and closes on outside click or blur.
+ * menu (clear conversation / load a large demo). The menu supports arrow-key
+ * navigation between items, Escape dismissal, and focus trapping per WAI-ARIA
+ * menu pattern.
  */
 export function ChatHeader({
   isBotTyping,
@@ -23,9 +24,20 @@ export function ChatHeader({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const itemsRef = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const closeMenu = useCallback(() => {
+    setMenuOpen(false);
+    triggerRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
+
+    // Focus the first menu item when menu opens.
+    requestAnimationFrame(() => {
+      itemsRef.current[0]?.focus();
+    });
 
     const onPointerDown = (event: PointerEvent) => {
       if (
@@ -34,22 +46,54 @@ export function ChatHeader({
       ) {
         return;
       }
-      setMenuOpen(false);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setMenuOpen(false);
-        triggerRef.current?.focus();
-      }
+      closeMenu();
     };
 
     document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
     };
-  }, [menuOpen]);
+  }, [menuOpen, closeMenu]);
+
+  const handleMenuKeyDown = (event: React.KeyboardEvent) => {
+    const items = itemsRef.current.filter(Boolean) as HTMLButtonElement[];
+    const currentIndex = items.indexOf(event.target as HTMLButtonElement);
+
+    switch (event.key) {
+      case 'ArrowDown': {
+        event.preventDefault();
+        const next = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+        items[next]?.focus();
+        break;
+      }
+      case 'ArrowUp': {
+        event.preventDefault();
+        const prev = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+        items[prev]?.focus();
+        break;
+      }
+      case 'Home': {
+        event.preventDefault();
+        items[0]?.focus();
+        break;
+      }
+      case 'End': {
+        event.preventDefault();
+        items[items.length - 1]?.focus();
+        break;
+      }
+      case 'Escape': {
+        event.preventDefault();
+        closeMenu();
+        break;
+      }
+      case 'Tab': {
+        event.preventDefault();
+        closeMenu();
+        break;
+      }
+    }
+  };
 
   const runAction = (action: () => void) => {
     action();
@@ -102,11 +146,14 @@ export function ChatHeader({
             ref={menuRef}
             role="menu"
             aria-label="Conversation options"
+            onKeyDown={handleMenuKeyDown}
             className="absolute right-0 z-30 mt-2 w-60 overflow-hidden rounded-xl bg-surface-raised p-1.5 shadow-2xl ring-1 ring-border-subtle [animation:var(--animate-fade-in-up)]"
           >
             <button
+              ref={(el) => { itemsRef.current[0] = el; }}
               type="button"
               role="menuitem"
+              tabIndex={-1}
               onClick={() => runAction(onLoadDemo)}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-text-primary transition-colors hover:bg-accent-soft/60 focus-visible:bg-accent-soft/60 focus-visible:outline-none"
             >
@@ -119,8 +166,10 @@ export function ChatHeader({
               </span>
             </button>
             <button
+              ref={(el) => { itemsRef.current[1] = el; }}
               type="button"
               role="menuitem"
+              tabIndex={-1}
               onClick={() => runAction(onClear)}
               disabled={messageCount === 0}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-danger transition-colors hover:bg-danger-soft/50 focus-visible:bg-danger-soft/50 focus-visible:outline-none disabled:opacity-50"

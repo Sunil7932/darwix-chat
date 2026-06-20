@@ -78,6 +78,7 @@ export function loadSession(): Message[] | null {
   }
 
   if (!isObject(parsed) || !Array.isArray(parsed.messages)) return null;
+  if (parsed.version !== SCHEMA_VERSION) return null;
 
   const messages: Message[] = [];
   for (const candidate of parsed.messages.slice(0, MAX_MESSAGES)) {

@@ -49,13 +49,13 @@ export async function streamChatReply(
     signal,
   });
 
-  if (response.status === 503) {
-    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-    if (payload?.error === 'not_configured') throw new ChatNotConfiguredError();
-    throw new Error('The assistant is temporarily unavailable.');
-  }
-
   if (!response.ok || !response.body) {
+    if (response.status === 503 || response.status === 404) {
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+      if (response.status === 404 || payload?.error === 'not_configured') {
+        throw new ChatNotConfiguredError();
+      }
+    }
     throw new Error(`The assistant could not respond (status ${response.status}).`);
   }
 

@@ -43,7 +43,7 @@ npm run dev
 
 `GEMINI_API_KEY` is read **only on the server** (the `/api/chat` proxy) and is
 never bundled into client code. Optionally set `GEMINI_MODEL` (defaults to
-`gemini-2.0-flash`; e.g. `gemini-2.5-flash`).
+`gemini-2.5-flash`).
 
 Other scripts:
 
@@ -229,12 +229,19 @@ Defensive defaults throughout (OWASP-aligned secure-coding practices):
 
 ## Deployment
 
-The frontend is a static Vite build (`npm run build` → `dist/`). The `api/chat.ts`
-function is written for a serverless platform such as **Vercel** (zero-config:
-`vercel` picks up `api/` and serves the SPA from `dist/`). Set `GEMINI_API_KEY`
-(and optionally `GEMINI_MODEL`) as an environment variable in the host's
-dashboard — never commit it. Without the variable, the deployed app runs in
-offline-fallback mode.
+The frontend is a static Vite build (`npm run build` → `dist/`). A `vercel.json`
+is included for zero-config deployment to **Vercel**: it sets the build command,
+output directory, and SPA rewrites. The `api/chat.ts` function runs as a
+serverless function alongside the static build.
+
+```bash
+# Deploy to Vercel (install the Vercel CLI first: npm i -g vercel)
+vercel
+```
+
+Set `GEMINI_API_KEY` (and optionally `GEMINI_MODEL`) as an environment variable
+in the host's dashboard — never commit it. Without the variable, the deployed
+app runs in offline-fallback mode.
 
 ---
 

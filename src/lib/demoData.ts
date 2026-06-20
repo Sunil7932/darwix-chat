@@ -47,7 +47,7 @@ export function createDemoMessages(count = 1_000): Message[] {
     messages.push({
       id: createId(),
       role: isUser ? 'user' : 'bot',
-      content: `${line}`,
+      content: line,
       createdAt: startAt + i * stepMs,
       status: 'sent',
     });

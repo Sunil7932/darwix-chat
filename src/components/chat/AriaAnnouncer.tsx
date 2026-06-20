@@ -45,6 +45,10 @@ export function AriaAnnouncer({ messages, isBotTyping }: AriaAnnouncerProps) {
     );
     if (failed) {
       announcedFailures.current.add(failed.id);
+      if (announcedFailures.current.size > 200) {
+        const oldest = announcedFailures.current.values().next().value;
+        if (oldest !== undefined) announcedFailures.current.delete(oldest);
+      }
       setAssertive('A message failed to send. Use the retry button to try again.');
     }
   }, [messages]);
