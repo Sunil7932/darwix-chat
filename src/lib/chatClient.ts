@@ -56,6 +56,9 @@ export async function streamChatReply(
         throw new ChatNotConfiguredError();
       }
     }
+    if (response.status === 429) {
+      throw new Error('Rate limit reached — please wait a moment and try again.');
+    }
     throw new Error(`The assistant could not respond (status ${response.status}).`);
   }
 
