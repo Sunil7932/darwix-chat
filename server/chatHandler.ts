@@ -31,7 +31,7 @@ const MAX_CONTENT_LENGTH = 8_000;
 /** Output cap — chat replies are short; keeps latency and cost low. */
 const MAX_OUTPUT_TOKENS = 1_024;
 /** Default model; override with the GEMINI_MODEL env var. Free-tier friendly. */
-const DEFAULT_MODEL = 'gemini-2.0-flash';
+const DEFAULT_MODEL = 'gemini-2.5-flash';
 
 const SYSTEM_PROMPT = [
   'You are the Darwix assistant, a helpful and friendly AI inside a chat interface.',
@@ -172,6 +172,15 @@ export async function handleChat(req: NodeReq, res: ServerResponse): Promise<voi
     model,
   )}:streamGenerateContent?alt=sse`;
 
+  // Thinking-capable models (2.5+ / 3.x) deliberate before answering, adding
+  // several seconds of latency. For a snappy chat we turn it off where supported.
+  const generationConfig: Record<string, unknown> = {
+    maxOutputTokens: MAX_OUTPUT_TOKENS,
+  };
+  if (/2\.5|gemini-3|flash-latest|pro-latest/.test(model)) {
+    generationConfig.thinkingConfig = { thinkingBudget: 0 };
+  }
+
   // Abort the upstream request if the client disconnects.
   const controller = new AbortController();
   let aborted = false;
@@ -203,7 +212,7 @@ export async function handleChat(req: NodeReq, res: ServerResponse): Promise<voi
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
         contents,
-        generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS },
+        generationConfig,
       }),
       signal: controller.signal,
     });
