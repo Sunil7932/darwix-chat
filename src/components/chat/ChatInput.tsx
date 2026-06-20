@@ -69,7 +69,7 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
 
   return (
     <form
-      className="border-t border-border-subtle bg-surface/80 px-3 py-3 backdrop-blur-sm sm:px-4"
+      className="border-t border-border-subtle bg-surface/80 px-4 py-3 backdrop-blur-sm sm:px-6"
       onSubmit={(event) => {
         event.preventDefault();
         submit();
@@ -77,8 +77,8 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
     >
       <div
         className={clsx(
-          'mx-auto flex max-w-3xl items-end gap-2 rounded-2xl bg-surface-raised p-2 ring-1 transition-colors',
-          'ring-border-subtle focus-within:ring-accent',
+          'flex items-end gap-3 rounded-2xl bg-surface-raised p-2.5 ring-1 transition-colors',
+          'ring-border-subtle focus-within:ring-2 focus-within:ring-accent',
         )}
       >
         <label htmlFor="chat-composer" className="sr-only">
@@ -93,12 +93,12 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
           maxLength={MAX_LENGTH}
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type a message…  (Enter to send, Shift + Enter for a new line)"
+          placeholder="Type a message..."
           aria-label="Message the assistant"
           aria-describedby="composer-hint"
           className={clsx(
-            'scrollbar-slim max-h-[200px] min-h-[2.5rem] flex-1 resize-none bg-transparent px-2 py-1.5',
-            'text-[0.9375rem] leading-relaxed text-text-primary placeholder:text-text-muted',
+            'scrollbar-slim max-h-[200px] min-h-[2.75rem] flex-1 resize-none bg-transparent px-3 py-2',
+            'text-base leading-relaxed text-text-primary placeholder:text-text-muted',
             'focus:outline-none disabled:opacity-60',
           )}
         />
@@ -107,19 +107,19 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
           disabled={!canSend}
           aria-label="Send message"
           className={clsx(
-            'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all',
+            'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-raised',
             canSend
               ? 'bg-accent text-white hover:bg-accent-strong active:scale-95'
               : 'cursor-not-allowed bg-border-subtle text-text-muted',
           )}
         >
-          <SendHorizontal size={18} aria-hidden="true" />
+          <SendHorizontal size={20} aria-hidden="true" />
         </button>
       </div>
 
-      <div className="mx-auto mt-1.5 flex max-w-3xl items-center justify-between px-2">
-        <p id="composer-hint" className="text-[11px] text-text-muted">
+      <div className="mt-1.5 flex items-center justify-between px-2">
+        <p id="composer-hint" className="text-xs text-text-muted">
           Press <kbd className="font-sans font-semibold text-text-secondary">Enter</kbd> to
           send · <kbd className="font-sans font-semibold text-text-secondary">Shift + Enter</kbd>{' '}
           for a new line
@@ -128,7 +128,7 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
           <span
             aria-live="polite"
             className={clsx(
-              'text-[11px] tabular-nums',
+              'text-xs tabular-nums',
               remaining <= 0 ? 'text-danger' : 'text-text-muted',
             )}
           >
